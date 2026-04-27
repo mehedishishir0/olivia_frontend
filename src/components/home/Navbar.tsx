@@ -98,7 +98,7 @@ export const Navbar = () => {
                 variant="outline"
                 className="border-gray-300 text-gray-700 rounded-md px-6 text-xs"
               >
-                Login
+                Login Here
               </Button>
             </>
           )}
@@ -177,7 +177,7 @@ export const Navbar = () => {
                     variant="outline"
                     className="w-full border-gray-300 text-gray-700 rounded-md text-xs"
                   >
-                    Login
+                    Login Here
                   </Button>
                 </>
               )}
