@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const ClimateJourneyBanner = () => {
   return (
@@ -27,11 +28,13 @@ const ClimateJourneyBanner = () => {
 
         {/* Reusable Button  */}
         <div className="space-x-5">
-          <button
-            className={`bg-[#004242] hover:bg-[#004444] cursor-pointer text-white font-semibold py-3 px-8 rounded-md transition-all duration-300 shadow-lg`}
-          >
-            Start Free Trial
-          </button>
+          <Link href={`/survey`}>
+            <button
+              className={`bg-[#004242] hover:bg-[#004444] cursor-pointer text-white font-semibold py-3 px-8 rounded-md transition-all duration-300 shadow-lg`}
+            >
+              Start Free Trial
+            </button>
+          </Link>
           <button className="bg-inherit border border-white hover:bg-[#004444] cursor-pointer hover:border-primary font-semibold py-3 px-8 rounded-md transition-all duration-300 shadow-lg text-white">
             Explore Membership Benefits
           </button>
