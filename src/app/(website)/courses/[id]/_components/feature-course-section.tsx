@@ -177,7 +177,7 @@ const FeaturedCourseSection = () => {
   };
 
   const getTotalDurationInHours = (totalDuration: string) => {
-    if (totalDuration.includes("min")) {
+    if (totalDuration?.includes("min")) {
       const minutes = parseInt(totalDuration);
       if (minutes >= 60) {
         const hours = Math.floor(minutes / 60);
@@ -268,7 +268,7 @@ const FeaturedCourseSection = () => {
 
   const skillLevel = getSkillLevel(course.lessons);
   const formattedDuration = getTotalDurationInHours(course.totalDuration);
-  const firstLesson = course.lessons[0];
+  const firstLesson = course?.lessons[0];
   const videoUrl = firstLesson?.videoUrl;
   const isEnrollingLoading = enrollmentMutation.isPending || isEnrolling;
 
@@ -288,7 +288,7 @@ const FeaturedCourseSection = () => {
                 course includes {course.lessonCount} lessons with a total
                 duration of {formattedDuration}. Perfect for{" "}
                 {skillLevel.toLowerCase()} level learners looking to enhance
-                their skills in {course.category.toLowerCase()}.
+                their skills in {course?.category?.toLowerCase()}.
               </p>
 
               {/* Stats Grid */}
