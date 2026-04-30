@@ -4,7 +4,6 @@ import PricingCards from "./pricing-cards";
 import PricingCTA from "./pricing-cta";
 import HowItWorksSecondary from "./how-it-work-secoundary";
 import ComparePlans from "./compare-plans";
-import SpecificServicePricing from "./specific-service-pricing";
 import { Newsletter } from "@/components/home/Newsletter";
 import CommunitySection from "@/components/home/CommunitySection";
 import FAQSection from "./FAQSection";
@@ -20,9 +19,9 @@ const ClimateJourney = () => {
       <PricingCTA />
       <HowItWorksSecondary />
       <ComparePlans />
-      <FAQSection />
-      <SpecificServicePricing />
+
       <div>
+        <FAQSection />
         <Newsletter />
         <CommunitySection />
       </div>

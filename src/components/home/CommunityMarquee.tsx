@@ -217,7 +217,7 @@ export default function CommunityFeedback() {
             ))}
           </Marquee>
 
-          <Marquee reverse pauseOnHover className="[--duration:45s]">
+          <Marquee reverse pauseOnHover className="[--duration:10s]">
             {secondRow.map((t) => (
               <TestimonialCard key={t._id} item={t} />
             ))}
