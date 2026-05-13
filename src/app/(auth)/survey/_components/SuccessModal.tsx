@@ -27,7 +27,7 @@ const SuccessModal = () => {
           </p>
 
           {/* Action Button */}
-          <Link href={"/climate-journey"}>
+          <Link href={"/membership-pricing"}>
             <Button
               variant="outline"
               className="border-2 border-[#004242] text-[#004242] text-[16px] font-extrabold  px-8 py-6 rounded-md hover:bg-[#062d29] hover:text-white transition-all duration-300"

@@ -17,6 +17,7 @@ const page = () => {
           title="Join a Global Climate Community"
           isHide={false}
           buttonTitle="Become a Member"
+          buttonLink="/membership-pricing#pricing"
         />
         <HowItWorks />
       </div>

@@ -76,7 +76,7 @@ const LearnMoreSection = () => {
         </div>
 
         <div className="text-center mt-12">
-          <Link href={`/climate-journey#pricing`}>
+          <Link href={`/membership-pricing#pricing`}>
             <Button className="h-[48px] font-bold">
               View our Membership Pricing
             </Button>

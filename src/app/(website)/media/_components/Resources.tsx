@@ -27,13 +27,11 @@ interface ApiResponse {
 
 const MEDIA_CATEGORIES = [
   "All",
-  "video",
-  "podcast",
-  "event-recording",
-  "expert-interview",
-  "insight",
-  "blog",
-  "resource",
+  "Videos",
+  "Event Recordings",
+  "Expert Interviews",
+  "Insights",
+  "Community",
 ] as const;
 
 // ---------------- API FETCH ----------------
@@ -134,9 +132,14 @@ const ResourceCard = ({ resource }: { resource: MediaItem }) => {
           {resource.title}
         </h3>
 
-        <p className="text-slate-500 text-[13px] leading-relaxed mb-6 line-clamp-3">
-          {resource.description}
-        </p>
+        <p
+          className="text-slate-500 text-[13px] leading-relaxed mb-6 line-clamp-3"
+          dangerouslySetInnerHTML={{
+            __html:
+              resource.description.slice(0, 200) +
+              (resource.description.length > 200 ? "..." : ""),
+          }}
+        />
       </div>
 
       {/* Link */}

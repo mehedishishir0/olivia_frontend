@@ -1,4 +1,3 @@
-import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -40,7 +39,7 @@ const AssistanceSection = () => {
                 Apply Here
               </button>
             </Link>
-            <Link href={"/climate-journey#pricing"}>
+            <Link href={"/membership-pricing#pricing"}>
               <button className="bg-transparent text-[#004d4d] px-8 py-3 rounded-lg  hover:bg-[#eef2f2] transition-colors border-2 border-[#004d4d] cursor-pointer">
                 View Pricing
               </button>

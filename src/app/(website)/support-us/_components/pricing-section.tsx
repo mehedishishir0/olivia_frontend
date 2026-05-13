@@ -112,7 +112,7 @@ const PricingSection = () => {
       </div>
 
       {/* Bottom Button */}
-      <Link href={"/climate-journey"}>
+      <Link href={"/membership-pricing"}>
         <button className="bg-[#064E4B] text-white px-8 py-3 rounded-lg  text-sm hover:bg-[#085e5a] transition-colors cursor-pointer">
           View Membership Plans
         </button>
