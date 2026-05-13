@@ -23,7 +23,7 @@ export const Navbar = () => {
     // { name: "Membership", href: "/membership" },
     { name: "Blogs", href: "/blog" },
     { name: "Mentors & Coaches", href: "/mentor-coaches/all" },
-    { name: "Support Us", href: "/support-us" },
+    { name: "Career Services ", href: "/career-services" },
     { name: "Find Your Opportunity", href: "/find-your-opportunity" },
   ];
 
