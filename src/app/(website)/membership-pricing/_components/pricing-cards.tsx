@@ -26,7 +26,7 @@ interface PricingPlan {
 const PricingCards = () => {
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
   const session = useSession();
-  // const token = session?.data?.user?.accessToken;
+  const email = session?.data?.user?.email;
 
   const { data: plans, isLoading } = useQuery({
     queryKey: ["subscription-plans"],
@@ -155,7 +155,10 @@ const PricingCards = () => {
               </span>
             </div>
 
-            <Link href={`${plan?.link}`} target="_blank">
+            <Link
+              href={`${email ? `${plan?.link}?email=${email}` : "/login"}`}
+              target={`${email ? "_blank" : "_self"}`}
+            >
               <button
                 className={`w-full py-3 rounded-lg cursor-pointer font-semibold text-sm mb-8 transition-all duration-300 ${
                   plan?.hasTrial === true
