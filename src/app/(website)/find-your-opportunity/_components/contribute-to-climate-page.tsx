@@ -167,6 +167,10 @@ export default function ContributeToClimatePage() {
                     <option value="Fellowship">Fellowship</option>
                     <option value="Internship">Internship</option>
                     <option value="Resource">Resource</option>
+                    <option value="courses">Courses</option>
+                    <option value="events">Events</option>
+                    <option value="grants">Grants</option>
+                    <option value="fundraising">Fundraising</option>
                   </select>
                   <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                 </div>
