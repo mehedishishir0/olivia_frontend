@@ -174,165 +174,109 @@ const ComparePlans = () => {
     );
   }
 
-  // Find plans by title
-  const beginnerPlan = subscriptionPlans.find(
-    (p: PricingPlan) => p.title === "Intermediate",
-  );
-  const monthlyPlan = subscriptionPlans.find(
-    (p: PricingPlan) => p.title === "Pro",
-  );
-  const yearlyPlan = subscriptionPlans.find(
-    (p: PricingPlan) => p.title === "Enterprise",
-  );
-
-  // Default values if plans not found
-  const plansToShow = {
-    beginner: beginnerPlan || subscriptionPlans[0],
-    monthly: monthlyPlan || subscriptionPlans[1],
-    yearly: yearlyPlan || subscriptionPlans[2],
-  };
+  const tableData = [
+    {
+      feature: "Community Access",
+      nonMember: "Limited",
+      beginner: "Full",
+      monthly: "Full",
+      yearly: "Full",
+    },
+    {
+      feature: "Resources",
+      nonMember: "Basic",
+      beginner: "Standard",
+      monthly: "Premium",
+      yearly: "Premium",
+    },
+    {
+      feature: "Events",
+      nonMember: "Paid",
+      beginner: "10% Off",
+      monthly: "Free",
+      yearly: "Free",
+      highlight: true,
+    },
+    {
+      feature: "Courses",
+      nonMember: "Full Price",
+      beginner: "10% Off",
+      monthly: "Free",
+      yearly: "Included",
+      highlight: true,
+    },
+    {
+      feature: "Career Services",
+      nonMember: "Full Price",
+      beginner: "10% Off",
+      monthly: "Free",
+      yearly: "Priority",
+      highlight: true,
+    },
+    {
+      feature: "AI Chatbot",
+      nonMember: "Full Price",
+      beginner: "10% Off",
+      monthly: "Free",
+      yearly: "Unlimited",
+      highlight: true,
+    },
+  ];
 
   return (
-    <section className="">
-      <div className="container mx-auto px-4">
-        <h2 className="text-4xl text-[#064E4B] mb-10 font-bold">
+    <section className="container pb-20">
+      <div>
+        <h1 className="text-5xl text-[#0a3d3d] mb-10 tracking-tight">
           Compare Plans
-        </h2>
+        </h1>
 
-        <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[768px]">
-              <thead>
-                <tr className="border-b border-[#F1F5F9] bg-gray-50">
-                  <th className="p-6 text-lg font-semibold text-[#064E4B] w-1/4">
-                    Feature
-                  </th>
-                  <th className="p-6 text-lg font-semibold text-[#064E4B]">
-                    Non-Member
-                  </th>
-                  <th className="p-6 text-lg font-semibold text-[#064E4B]">
-                    {plansToShow.beginner?.title || "Beginner"}
-                  </th>
-                  <th className="p-6 text-lg font-semibold text-[#064E4B]">
-                    {plansToShow.monthly?.title || "Pro"} (Monthly)
-                  </th>
-                  <th className="p-6 text-lg font-semibold text-[#064E4B]">
-                    {plansToShow.yearly?.title || "Enterprise"} (Yearly)
-                  </th>
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-bottom border-slate-100">
+                <th className="p-6 text-xl font-bold text-[#0a3d3d]">
+                  Feature
+                </th>
+                <th className="p-6 text-xl font-bold text-[#0a3d3d] text-center">
+                  Non-Member
+                </th>
+                <th className="p-6 text-xl font-bold text-[#0a3d3d] text-center">
+                  Beginner
+                </th>
+                <th className="p-6 text-xl font-bold text-[#0a3d3d] text-center">
+                  Monthly
+                </th>
+                <th className="p-6 text-xl font-bold text-[#0a3d3d] text-center">
+                  Yearly
+                </th>
+              </tr>
+            </thead>
+            <tbody className="text-slate-600">
+              {tableData.map((row, index) => (
+                <tr
+                  key={index}
+                  className="border-t border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors"
+                >
+                  <td className="p-5 font-medium text-slate-700">
+                    {row.feature}
+                  </td>
+                  <td className="p-5 text-center">{row.nonMember}</td>
+                  <td className="p-5 text-center">{row.beginner}</td>
+                  <td
+                    className={`p-5 text-center ${row.highlight ? "text-emerald-700 font-semibold" : ""}`}
+                  >
+                    {row.monthly}
+                  </td>
+                  <td
+                    className={`p-5 text-center ${row.highlight ? "text-[#1b4332] font-bold" : ""}`}
+                  >
+                    {row.yearly}
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-[#F1F5F9]">
-                {comparisonFeatures.map((feature, idx) => {
-                  // Determine if this row should have highlighted cells
-                  const isMonthlyHighlighted =
-                    feature === "Events" &&
-                    plansToShow.monthly?.discounts?.events === 100;
-                  const isYearlyHighlighted =
-                    (feature === "Courses" &&
-                      plansToShow.yearly?.discounts?.courses === 100) ||
-                    (feature === "Career Services" &&
-                      plansToShow.yearly?.title === "Enterprise") ||
-                    (feature === "AI Chatbot" &&
-                      plansToShow.yearly?.title === "Enterprise");
-
-                  return (
-                    <tr
-                      key={idx}
-                      className="hover:bg-[#F8FAFC] transition-colors"
-                    >
-                      <td className="p-6 text-[#064E4B] font-medium text-sm md:text-base">
-                        {feature}
-                      </td>
-
-                      {/* Non-Member */}
-                      <td className="p-6 text-[#528B8A] text-sm md:text-base">
-                        {feature === "Community Access" && "Limited"}
-                        {feature === "Resources" && "Basic"}
-                        {feature === "Events" && "Paid"}
-                        {feature === "Courses" && "Full Price"}
-                        {feature === "Career Services" && "Full Price"}
-                        {feature === "AI Chatbot" && "Full Price"}
-                        {feature === "Mentorship" && "Not Available"}
-                      </td>
-
-                      {/* Beginner/Intermediate */}
-                      <td className="p-6 text-[#528B8A] text-sm md:text-base">
-                        {getFeatureValue(plansToShow.beginner, feature)}
-                      </td>
-
-                      {/* Monthly/Pro */}
-                      <td
-                        className={`p-6 text-sm md:text-base ${
-                          isMonthlyHighlighted
-                            ? "text-[#064E4B] font-semibold"
-                            : "text-[#528B8A]"
-                        }`}
-                      >
-                        {getFeatureValue(plansToShow.monthly, feature)}
-                      </td>
-
-                      {/* Yearly/Enterprise */}
-                      <td
-                        className={`p-6 text-sm md:text-base ${
-                          isYearlyHighlighted
-                            ? "text-[#064E4B] font-semibold"
-                            : "text-[#528B8A]"
-                        }`}
-                      >
-                        {getFeatureValue(plansToShow.yearly, feature)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
-
-        {/* Pricing Summary */}
-        {/* <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl p-4 text-center border border-[#E2E8F0]">
-            <p className="text-sm text-[#528B8A]">Non-Member</p>
-            <p className="text-xl font-bold text-[#064E4B]">Free</p>
-          </div>
-
-          <div className="bg-white rounded-xl p-4 text-center border border-[#E2E8F0]">
-            <p className="text-sm text-[#528B8A]">
-              {plansToShow.beginner?.title}
-            </p>
-            <p className="text-xl font-bold text-[#064E4B]">
-              ${plansToShow.beginner?.price}/
-              {plansToShow.beginner?.billingType === "monthly" ? "mo" : "yr"}
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl p-4 text-center border-2 border-[#064E4B] relative">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#064E4B] text-white text-xs px-3 py-1 rounded-full">
-              Most Popular
-            </div>
-            <p className="text-sm text-[#528B8A]">
-              {plansToShow.monthly?.title}
-            </p>
-            <p className="text-xl font-bold text-[#064E4B]">
-              ${plansToShow.monthly?.price}/mo
-            </p>
-            {plansToShow.monthly?.hasTrial && (
-              <p className="text-xs text-green-600 mt-1">
-                {plansToShow.monthly?.trialDays}-day free trial
-              </p>
-            )}
-          </div>
-
-          <div className="bg-white rounded-xl p-4 text-center border border-[#E2E8F0]">
-            <p className="text-sm text-[#528B8A]">
-              {plansToShow.yearly?.title}
-            </p>
-            <p className="text-xl font-bold text-[#064E4B]">
-              ${plansToShow.yearly?.price}/
-              {plansToShow.yearly?.billingType === "yearly" ? "yr" : "mo"}
-            </p>
-          </div>
-        </div> */}
       </div>
     </section>
   );

@@ -24,7 +24,7 @@ const ActOnClimateSponsorship = () => {
             <span className="inline-block  hero-font px-3 py-1 text-[18px] font-semibold bg-[#eef2f1] text-[#004242] rounded-full border border-[#5D8AA880]">
               Partnership Opportunities
             </span>
-            <h1 className="text-5xl text-[#004242]   leading-15 ">
+            <h1 className="text-5xl text-[#004242] leading-15 ">
               Sponsor <br /> Act on Climate
             </h1>
             <p className="text-[#5D8AA8] leading-relaxed ">
