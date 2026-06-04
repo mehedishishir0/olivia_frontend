@@ -35,9 +35,19 @@ const ClimateJourneyBanner = () => {
               Start Free Trial
             </button>
           </Link>
-          <button className="bg-inherit border border-white hover:bg-[#004444] cursor-pointer hover:border-primary font-semibold py-3 px-8 rounded-md transition-all duration-300 shadow-lg text-white">
-            Explore Membership Benefits
-          </button>
+          <Link href="#pricing" scroll={true}>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                document
+                  .getElementById("pricing")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="bg-inherit border border-white hover:bg-[#004444] cursor-pointer hover:border-primary font-semibold py-3 px-8 rounded-md transition-all duration-300 shadow-lg text-white"
+            >
+              Explore Membership Benefits
+            </button>
+          </Link>
         </div>
       </div>
     </section>

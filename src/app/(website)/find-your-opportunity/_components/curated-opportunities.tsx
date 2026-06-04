@@ -113,7 +113,7 @@ const CuratedOpportunities = () => {
   };
 
   return (
-    <section>
+    <section id="curated-opportunities">
       <div className="container max-w-7xl mx-auto px-4">
         {/* Header Section */}
         <div className="text-center mb-10">

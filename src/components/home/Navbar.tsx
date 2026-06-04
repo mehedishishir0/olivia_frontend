@@ -29,6 +29,9 @@ export const Navbar = () => {
 
   // ড্রপডাউন বা সাব-লিংকসমূহ
   const servicesLinks = [
+    { name: "Support Our Work", href: "/support-our-work" },
+    { name: "Membership Pricing", href: "/membership-pricing" },
+    { name: "Become a Member", href: "/membership" },
     { name: "Blogs", href: "/blog" },
     { name: "Mentors & Coaches", href: "/mentor-coaches/all" },
     { name: "Career Services", href: "/career-services" },
