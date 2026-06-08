@@ -19,9 +19,9 @@ const PricingCTA = () => {
             To learn more about our pricing and what we offer, click here.
           </h2>
 
-          <p className="text-[#528B8A] text-sm md:text-base font-medium">
+          {/* <p className="text-[#528B8A] text-sm md:text-base font-medium">
             Take out non-profits and keep discounts
-          </p>
+          </p> */}
 
           <div className="pt-4">
             <Link

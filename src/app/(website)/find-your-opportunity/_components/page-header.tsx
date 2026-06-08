@@ -1,5 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const PageHeader = () => {
   return (
@@ -26,12 +27,32 @@ const PageHeader = () => {
         </p>
 
         <div className="space-x-4">
-          <Button className="h-[50px] font-bold">
-            Start with AI Assistant
-          </Button>
-          <Button className="h-[50px] font-bold bg-inherit border hover:bg-inherit">
-            Browse Opportunities
-          </Button>
+          <Link href="#chat-header" scroll={true}>
+            <Button
+              onClick={(e) => {
+                e.preventDefault();
+                document
+                  .getElementById("chat-header")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="h-[50px] font-bold"
+            >
+              Start with AI Assistant
+            </Button>
+          </Link>
+          <Link href="#curated-opportunities" scroll={true}>
+            <Button
+              onClick={(e) => {
+                e.preventDefault();
+                document
+                  .getElementById("curated-opportunities")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="h-[50px] font-bold bg-inherit border hover:bg-inherit"
+            >
+              Browse Opportunities
+            </Button>
+          </Link>
         </div>
       </div>
     </section>

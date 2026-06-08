@@ -63,10 +63,10 @@ export default function ContributeToClimatePage() {
   });
 
   const onSubmit = (data: OpportunityFormData) => {
-    if (!token) {
-      toast.error("Please login to submit an opportunity");
-      return;
-    }
+    // if (!token) {
+    //   toast.error("Please login to submit an opportunity");
+    //   return;
+    // }
     mutation.mutate(data);
   };
 

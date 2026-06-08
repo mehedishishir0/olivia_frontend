@@ -2,7 +2,6 @@
 
 import React, {
   useState,
-  useMemo,
   useDeferredValue,
   useEffect,
   useTransition,
@@ -72,26 +71,10 @@ const CuratedOpportunities = () => {
   const debouncedSearch = useDeferredValue(searchTerm);
   const [, startTransition] = useTransition();
 
-  // 1. Fetch ALL data initially to extract unique categories dynamically
-  const { data: allJobsData } = useQuery<JobApiResponse>({
-    queryKey: ["all-jobs-metadata"],
-    queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/jobs/all?limit=100`,
-      );
-      return res.json();
-    },
-  });
+  // ✅ Static Categories (ONLY CHANGE)
+  const dynamicCategories = ["All", "Jobs", "Fellowships", "Resources"];
 
-  const dynamicCategories = useMemo(() => {
-    if (!allJobsData?.data) return ["All"];
-    const cats = new Set(
-      allJobsData.data.map((job) => job.category).filter(Boolean),
-    );
-    return ["All", ...Array.from(cats)];
-  }, [allJobsData]);
-
-  // 2. Main Query for Paginated & Filtered Data
+  // Main Query for Paginated & Filtered Data
   const { data, isLoading } = useQuery<JobApiResponse>({
     queryKey: ["jobs", currentPage, selectedCategory, debouncedSearch],
     queryFn: async () => {
@@ -130,7 +113,7 @@ const CuratedOpportunities = () => {
   };
 
   return (
-    <section>
+    <section id="curated-opportunities">
       <div className="container max-w-7xl mx-auto px-4">
         {/* Header Section */}
         <div className="text-center mb-10">
