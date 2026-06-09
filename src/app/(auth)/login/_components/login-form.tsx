@@ -36,7 +36,6 @@ const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-
   const form = useForm<FormType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -58,15 +57,8 @@ const LoginForm = () => {
         toast.error(res.error);
         return;
       }
-
+      router.push("/");
       toast.success("Login successful!");
-      const session = await getSession();
-
-      if (session?.user?.isSurvey === false) {
-        router.push("/survey");
-      } else {
-        router.push("/");
-      }
     } catch (error) {
       console.error(`login error : ${error}`);
       toast.error("Something went wrong!");
