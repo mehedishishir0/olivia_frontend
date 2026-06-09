@@ -275,8 +275,7 @@ export default function ClimateOnboarding() {
             />
           </div>
         </div>
-      )}
-
+      )} 
       <Card className="w-full max-w-3xl p-10 shadow-sm border-none rounded-3xl bg-white">
         {/* STEP 0: WELCOME */}
         {currentStep === 0 && (
@@ -308,8 +307,7 @@ export default function ClimateOnboarding() {
               Takes less than 2 minutes to set up
             </p>
           </div>
-        )}
-
+        )} 
         {/* STEP 1: IDENTITY */}
         {currentStep === 1 && (
           <div className="space-y-6">
@@ -388,7 +386,6 @@ export default function ClimateOnboarding() {
             </div>
           </div>
         )}
-
         {/* STEP 2: JOURNEY */}
         {currentStep === 2 && (
           <div className="space-y-6">
