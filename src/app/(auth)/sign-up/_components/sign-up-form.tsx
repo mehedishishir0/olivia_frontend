@@ -136,7 +136,7 @@ const { mutate, isPending } = useMutation({
       return;
     }
 
-    router.push("/survey");
+   window.location.href = "/survey";
   },
 
   onError: (error) => {
