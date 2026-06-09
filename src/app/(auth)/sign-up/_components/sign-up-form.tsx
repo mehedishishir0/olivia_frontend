@@ -20,6 +20,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 const formSchema = z
   .object({
@@ -60,34 +61,88 @@ const SignUpForm = () => {
     },
   });
 
-  const { mutate, isPending } = useMutation({
-    mutationFn: async (values: FormType) => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/register`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            firstName: values.firstName,
-            lastName: values.lastName,
-            email: values.email,
-            password: values.password,
-          }),
-        },
-      );
+//   const { mutate, isPending } = useMutation({
+//     mutationFn: async (values: FormType) => {
+//       const res = await fetch(
+//         `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/register`,
+//         {
+//           method: "POST",
+//           headers: { "Content-Type": "application/json" },
+//           body: JSON.stringify({
+//             firstName: values.firstName,
+//             lastName: values.lastName,
+//             email: values.email,
+//             password: values.password,
+//           }),
+//         },
+//       );
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Registration failed");
-      return data;
-    },
-    onSuccess: () => {
-      toast.success("Account created successfully!");
-      router.push("/login");
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    },
-  });
+//       const data = await res.json();
+//  console.log(data)
+//       if (!res.ok) throw new Error(data?.message || "Registration failed");
+//       return data;
+//     },
+//     onSuccess: () => {
+
+//       toast.success("Account created successfully!");
+//       router.push("/survey");
+//     },
+//     onError: (error) => {
+//       toast.error(error.message);
+//     },
+//   });
+
+
+const { mutate, isPending } = useMutation({
+  mutationFn: async (values: FormType) => {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/register`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: values.firstName,
+          lastName: values.lastName,
+          email: values.email,
+          password: values.password,
+        }),
+      },
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.message || "Registration failed");
+    }
+
+    return {
+      response: data,
+      values,
+    };
+  },
+
+  onSuccess: async ({ values }) => {
+    toast.success("Account created successfully!");
+
+    // AUTO LOGIN
+    const res = await signIn("credentials", {
+      email: values.email,
+      password: values.password,
+      redirect: false,
+    });
+
+    if (res?.error) {
+      toast.error(res.error);
+      return;
+    }
+
+    router.push("/survey");
+  },
+
+  onError: (error) => {
+    toast.error(error.message);
+  },
+});
 
   const onSubmit = (values: FormType) => {
     mutate(values);

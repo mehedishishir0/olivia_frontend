@@ -285,7 +285,7 @@ export default function ClimateOnboarding() {
               <Image
                 width={800}
                 height={400}
-                src="/survey.png"
+                src="/images/survey.png"
                 alt="Climate Scene"
                 className="w-full h-[280px] object-cover"
               />
