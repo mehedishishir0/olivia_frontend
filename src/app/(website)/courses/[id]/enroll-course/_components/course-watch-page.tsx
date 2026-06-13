@@ -1,53 +1,30 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useQuery } from "@tanstack/react-query";
 import {
-  PlayCircle,
-  Lock,
+  BarChart,
+  BookOpen,
   ChevronDown,
   Clock,
-  BookOpen,
-  BarChart,
+  Lock,
   Play,
+  PlayCircle,
 } from "lucide-react";
-import { useParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-
-interface Lesson {
-  _id: string;
-  title: string;
-  duration: string;
-  level: string;
-  videoUrl: string;
-}
-
-interface Course {
-  _id: string;
-  title: string;
-  category: string;
-  lessonCount: number;
-  totalDuration: string;
-  price: number;
-  currency: string;
-  isAvailable: boolean;
-  totalEnrolled: number;
-  image: {
-    url: string;
-    public_id: string;
-  };
-  lessons: Lesson[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface ApiResponse {
-  success: boolean;
-  message: string;
-  statusCode: number;
-  data: Course;
-}
+import { api } from "@/lib/api";
+import {
+  CourseApiResponse,
+  CourseLesson,
+  getCourseDuration,
+  getCourseLessonCount,
+  getCourseLevel,
+  getVideoEmbedUrl,
+} from "@/lib/course-utils";
 
 interface PlaylistSection {
   id: string;
@@ -55,129 +32,56 @@ interface PlaylistSection {
   lessons: number;
   time: string;
   isLocked?: boolean;
-  items?: Lesson[];
+  items: CourseLesson[];
 }
 
 const CourseWatchPage = () => {
   const { id } = useParams();
+  const { data: session } = useSession();
   const [expandedSection, setExpandedSection] = useState<string | null>(
     "section-0",
   );
-  const [activeLesson, setActiveLesson] = useState<string>("");
+  const [activeLesson, setActiveLesson] = useState("");
   const [isVideoLoading, setIsVideoLoading] = useState(true);
 
-  const { data, isLoading, error } = useQuery<ApiResponse>({
-    queryKey: ["enroll-course", id],
+  const { data, isLoading, error } = useQuery<CourseApiResponse>({
+    queryKey: ["enroll-course", id, session?.user?.accessToken],
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/course/${id}`,
-      );
-      if (!res.ok) {
-        throw new Error("Failed to fetch course details");
-      }
-      return res.json();
+      const res = await api.get(`/course/${id}`);
+      return res.data;
     },
     enabled: !!id,
   });
 
   const course = data?.data;
+  const lessons = useMemo(() => {
+    return (course?.lessons || []).map((lesson, index) => ({
+      ...lesson,
+      _id: lesson._id || `lesson-${index}`,
+      duration: lesson.duration?.includes("min")
+        ? lesson.duration
+        : `${lesson.duration || 0} min`,
+      videoUrl: lesson.videoUrl || "",
+    }));
+  }, [course?.lessons]);
 
-  // Transform course lessons into playlist sections
-  const playlistItems: PlaylistSection[] = course
-    ? [
-        {
-          id: "section-0",
-          title: course.title,
-          lessons: course.lessonCount,
-          time: course.totalDuration,
-          isLocked: false,
-          items: course.lessons.map((lesson) => ({
-            ...lesson,
-            _id: lesson._id,
-            title: lesson.title,
-            duration: `${lesson.duration} min`,
-            videoUrl: lesson.videoUrl,
-          })),
-        },
-      ]
-    : [];
+  const activeLessonId = activeLesson || lessons[0]?._id || "";
+  const activeLessonData =
+    lessons.find((lesson) => lesson._id === activeLessonId) || lessons[0];
 
-  const toggleSection = (sectionId: string, isLocked?: boolean) => {
-    if (isLocked) return;
-    setExpandedSection(expandedSection === sectionId ? null : sectionId);
-  };
-
-  const handleLessonClick = (lesson: Lesson) => {
+  const handleLessonClick = (lesson: CourseLesson) => {
+    if (!lesson._id || lesson.videoUrl === "LOCKED") return;
     setActiveLesson(lesson._id);
-    setIsVideoLoading(true); // Reset loading state when changing lessons
+    setIsVideoLoading(true);
   };
-
-  const getActiveLessonData = () => {
-    if (!course) return null;
-    return course.lessons.find((lesson) => lesson._id === activeLesson);
-  };
-
-  const activeLessonData = getActiveLessonData();
-  const videoUrl = activeLessonData?.videoUrl;
-
-  const getSkillLevel = () => {
-    if (!course?.lessons || course.lessons.length === 0) return "Beginner";
-    const levels = course.lessons.map((l) => l.level.toLowerCase());
-    if (levels.includes("advanced")) return "Advanced";
-    if (levels.includes("intermediate")) return "Intermediate";
-    return "Beginner";
-  };
-
-  const getTotalDurationInHours = (totalDuration: string) => {
-    if (totalDuration.includes("min")) {
-      const minutes = parseInt(totalDuration);
-      if (minutes >= 60) {
-        const hours = Math.floor(minutes / 60);
-        const remainingMinutes = minutes % 60;
-        return remainingMinutes > 0
-          ? `${hours}h ${remainingMinutes}min`
-          : `${hours}h`;
-      }
-      return totalDuration;
-    }
-    return totalDuration;
-  };
-
-  const getEmbedUrl = (url: string) => {
-    // Handle different video URL formats
-    if (url.includes("youtube.com") || url.includes("youtu.be")) {
-      // Convert YouTube URL to embed format
-      let videoId = "";
-      if (url.includes("youtube.com/watch?v=")) {
-        videoId = url.split("v=")[1]?.split("&")[0];
-      } else if (url.includes("youtu.be/")) {
-        videoId = url.split("youtu.be/")[1]?.split("?")[0];
-      }
-      return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
-    }
-    if (url.includes("vimeo.com")) {
-      // Convert Vimeo URL to embed format
-      const videoId = url.split("vimeo.com/")[1]?.split("?")[0];
-      return videoId ? `https://player.vimeo.com/video/${videoId}` : url;
-    }
-    // Return as-is for direct video URLs or other formats
-    return url;
-  };
-
-  // Set first lesson as active when data loads
-  if (course && !activeLesson && course.lessons.length > 0) {
-    setActiveLesson(course.lessons[0]._id);
-  }
 
   if (error) {
     return (
       <section className="bg-[#F8FAFA] py-16">
-        <div className="container">
-          <div className="text-center py-12">
-            <p className="text-red-500">
-              Error loading course. Please try again later.
-            </p>
-          </div>
+        <div className="container text-center py-12">
+          <p className="text-red-500">
+            Error loading course. Please try again later.
+          </p>
         </div>
       </section>
     );
@@ -192,17 +96,15 @@ const CourseWatchPage = () => {
             <Skeleton className="h-6 w-48" />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div className="lg:col-span-4">
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="bg-white rounded-xl border border-gray-100 p-4"
-                  >
-                    <Skeleton className="h-16 w-full" />
-                  </div>
-                ))}
-              </div>
+            <div className="lg:col-span-4 space-y-3">
+              {[1, 2, 3].map((item) => (
+                <div
+                  key={item}
+                  className="bg-white rounded-xl border border-gray-100 p-4"
+                >
+                  <Skeleton className="h-16 w-full" />
+                </div>
+              ))}
             </div>
             <div className="lg:col-span-8 space-y-8">
               <Skeleton className="aspect-video w-full rounded-2xl" />
@@ -221,18 +123,50 @@ const CourseWatchPage = () => {
   if (!course) {
     return (
       <section className="bg-[#F8FAFA] py-16">
-        <div className="container">
-          <div className="text-center py-12">
-            <p className="text-gray-500">Course not found.</p>
-          </div>
+        <div className="container text-center py-12">
+          <p className="text-gray-500">Course not found.</p>
         </div>
       </section>
     );
   }
 
-  const skillLevel = getSkillLevel();
-  const formattedDuration = getTotalDurationInHours(course.totalDuration);
-  const embedVideoUrl = videoUrl ? getEmbedUrl(videoUrl) : null;
+  const skillLevel = getCourseLevel(course.lessons);
+  const formattedDuration = getCourseDuration(course);
+  const lessonCount = getCourseLessonCount(course);
+  const embedVideoUrl = getVideoEmbedUrl(activeLessonData?.videoUrl);
+  const playlistItems: PlaylistSection[] = [
+    {
+      id: "section-0",
+      title: course.title,
+      lessons: lessonCount,
+      time: formattedDuration,
+      isLocked: course.isLocked,
+      items: lessons,
+    },
+  ];
+
+  if (course.isLocked) {
+    return (
+      <section className="bg-[#F8FAFA] py-16">
+        <div className="container">
+          <div className="mx-auto max-w-xl rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-sm">
+            <Lock size={40} className="mx-auto mb-4 text-[#004242]" />
+            <h1 className="mb-3 text-2xl font-bold text-[#004242]">
+              Enroll to watch this course
+            </h1>
+            <p className="mb-6 text-sm text-gray-500">
+              Your account does not have access to these lessons yet.
+            </p>
+            <Link href={`/courses/${id}`}>
+              <Button className="bg-[#004242] hover:bg-[#003333]">
+                Back to Course
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="bg-[#F8FAFA] py-16">
@@ -242,12 +176,11 @@ const CourseWatchPage = () => {
             {course.title}
           </h1>
           <div className="text-gray-400 font-medium text-sm hidden md:block">
-            {course.lessonCount} Lessons • Total {formattedDuration}
+            {lessonCount} Lessons • Total {formattedDuration}
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Sidebar: Playlist */}
           <div className="lg:col-span-4">
             <div className="space-y-3 sticky top-32 z-40">
               {playlistItems.map((section) => (
@@ -256,12 +189,12 @@ const CourseWatchPage = () => {
                   className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm"
                 >
                   <button
-                    onClick={() => toggleSection(section.id, section.isLocked)}
-                    className={`w-full p-4 flex items-center justify-between text-left transition-colors ${
-                      expandedSection === section.id
-                        ? "bg-gray-50"
-                        : "hover:bg-gray-50/50"
-                    } ${section.isLocked ? "cursor-not-allowed opacity-80" : "cursor-pointer"}`}
+                    onClick={() =>
+                      setExpandedSection(
+                        expandedSection === section.id ? null : section.id,
+                      )
+                    }
+                    className="w-full p-4 flex items-center justify-between text-left transition-colors hover:bg-gray-50"
                   >
                     <div className="flex items-center gap-4">
                       <span className="text-xl font-semibold text-[#004242]">
@@ -276,71 +209,64 @@ const CourseWatchPage = () => {
                         </p>
                       </div>
                     </div>
-                    {section.isLocked ? (
-                      <Lock size={16} className="text-gray-300" />
-                    ) : (
-                      <ChevronDown
-                        size={18}
-                        className={`text-gray-400 transition-transform ${
-                          expandedSection === section.id ? "rotate-180" : ""
-                        }`}
-                      />
-                    )}
+                    <ChevronDown
+                      size={18}
+                      className={`text-gray-400 transition-transform ${
+                        expandedSection === section.id ? "rotate-180" : ""
+                      }`}
+                    />
                   </button>
 
-                  {!section.isLocked &&
-                    expandedSection === section.id &&
-                    section.items && (
-                      <div className="px-4 pb-4 space-y-1 bg-gray-50/30">
-                        {section.items.map((lesson, index) => (
-                          <button
-                            key={lesson._id}
-                            onClick={() => handleLessonClick(lesson)}
-                            className={`w-full flex items-center justify-between p-2 rounded-md transition-all ${
-                              activeLesson === lesson._id
-                                ? "bg-[#004242]/5 text-[#004242]"
-                                : "text-gray-600 hover:bg-white"
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <PlayCircle
-                                size={18}
-                                className={
-                                  activeLesson === lesson._id
-                                    ? "text-[#004242]"
-                                    : "text-gray-300"
-                                }
-                              />
-                              <span
-                                className={`text-sm font-medium ${
-                                  activeLesson === lesson._id
-                                    ? "text-[#004242]"
-                                    : ""
-                                }`}
-                              >
-                                {index + 1}. {lesson.title}
-                              </span>
-                            </div>
-                            <span className="text-xs text-gray-400 font-medium">
-                              {lesson.duration}
+                  {expandedSection === section.id && (
+                    <div className="px-4 pb-4 space-y-1 bg-gray-50/30">
+                      {section.items.map((lesson, index) => (
+                        <button
+                          key={lesson._id}
+                          onClick={() => handleLessonClick(lesson)}
+                          className={`w-full flex items-center justify-between p-2 rounded-md transition-all ${
+                            activeLessonId === lesson._id
+                              ? "bg-[#004242]/5 text-[#004242]"
+                              : "text-gray-600 hover:bg-white"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <PlayCircle
+                              size={18}
+                              className={
+                                activeLessonId === lesson._id
+                                  ? "text-[#004242]"
+                                  : "text-gray-300"
+                              }
+                            />
+                            <span
+                              className={`text-sm font-medium ${
+                                activeLessonId === lesson._id
+                                  ? "text-[#004242]"
+                                  : ""
+                              }`}
+                            >
+                              {index + 1}. {lesson.title}
                             </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                          </div>
+                          <span className="text-xs text-gray-400 font-medium">
+                            {lesson.duration}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Right Section: Player & Info */}
           <div className="lg:col-span-8 space-y-8">
             <div className="relative aspect-video w-full bg-black rounded-2xl overflow-hidden shadow-2xl">
               {embedVideoUrl ? (
                 <>
                   {isVideoLoading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
-                      <div className="w-12 h-12 border-4 border-[#004242] border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-12 h-12 border-4 border-[#004242] border-t-transparent rounded-full animate-spin" />
                     </div>
                   )}
                   <iframe
@@ -369,9 +295,9 @@ const CourseWatchPage = () => {
                 {activeLessonData?.title || course.title}
               </h2>
 
-              {activeLessonData?.title !== course.title && (
+              {activeLessonData?.title && (
                 <p className="text-gray-600 mb-6">
-                  Currently watching: {activeLessonData?.title}
+                  Currently watching: {activeLessonData.title}
                 </p>
               )}
 
@@ -391,7 +317,7 @@ const CourseWatchPage = () => {
                   </p>
                   <div className="flex items-center gap-1.5 text-gray-400 text-xs font-medium">
                     <BookOpen size={14} className="text-[#004242]" />
-                    {course.lessonCount} Units
+                    {lessonCount} Units
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -405,7 +331,7 @@ const CourseWatchPage = () => {
                 </div>
               </div>
 
-              {course.totalEnrolled > 0 && (
+              {(course.totalEnrolled || 0) > 0 && (
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <p className="text-sm text-gray-500">
                     {course.totalEnrolled} student

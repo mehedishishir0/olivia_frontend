@@ -7,11 +7,13 @@ declare module "next-auth" {
       id: string;
       name: string;
       email: string;
-      image: string;
+      image?: string;
       role: "admin" | "user" | string;
+      isSurvey?: boolean;
+      profileImage?: string;
+      accessToken: string;
+      refreshToken: string;
     };
-    accessToken: string;
-    refreshToken: string;
     error?: "RefreshAccessTokenError";
   }
 
@@ -19,9 +21,9 @@ declare module "next-auth" {
     id: string;
     name: string;
     email: string;
-    image: string;
+    image?: string;
     role: "admin" | "user" | string;
-    token: string;
+    accessToken: string;
     refreshToken: string;
   }
 }

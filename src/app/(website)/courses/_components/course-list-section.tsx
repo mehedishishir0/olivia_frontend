@@ -18,45 +18,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo, useDeferredValue, useEffect } from "react";
-
-// Interface updated to handle optional fields from API
-interface Course {
-  _id: string;
-  title: string;
-  category?: string;
-  lessonCount: number;
-  totalDuration: string;
-  price: number;
-  currency: string;
-  isAvailable: boolean;
-  totalEnrolled: number;
-  image?: {
-    url: string;
-    public_id: string;
-  };
-  lessons: Array<{
-    title: string;
-    duration: string;
-    level: string;
-    videoUrl: string;
-    _id: string;
-  }>;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface ApiResponse {
-  success: boolean;
-  message: string;
-  statusCode: number;
-  data: Course[];
-  meta: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPage: number;
-  };
-}
+import {
+  CoursesApiResponse,
+  formatCoursePrice,
+  getCourseDuration,
+  getCourseImageUrl,
+  getCourseLessonCount,
+  getCourseLevel,
+  getCourseLevelColor,
+} from "@/lib/course-utils";
 
 const CourseCardSkeleton = () => (
   <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm flex flex-col h-full">
@@ -91,7 +61,7 @@ const CourseListSection = () => {
 
   // Fetch all courses for categories
   const { data: allCoursesData, isLoading: isLoadingCategories } =
-    useQuery<ApiResponse>({
+    useQuery<CoursesApiResponse>({
       queryKey: ["all-courses"],
       queryFn: async () => {
         const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/course/all?limit=1000`;
@@ -112,7 +82,7 @@ const CourseListSection = () => {
   }, [allCoursesData]);
 
   // Fetch courses for current filter
-  const { data, isLoading, error } = useQuery<ApiResponse>({
+  const { data, isLoading, error } = useQuery<CoursesApiResponse>({
     queryKey: ["courses", selectedCategory],
     queryFn: async () => {
       const categoryParam =
@@ -126,15 +96,14 @@ const CourseListSection = () => {
     },
   });
 
-  const allCourses = data?.data || [];
-
   const filteredCourses = useMemo(() => {
+    const allCourses = data?.data || [];
     if (!allCourses.length) return [];
     if (!debouncedSearchTerm.trim()) return allCourses;
     return allCourses.filter((course) =>
       course.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()),
     );
-  }, [allCourses, debouncedSearchTerm]);
+  }, [data?.data, debouncedSearchTerm]);
 
   const paginatedCourses = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -151,40 +120,6 @@ const CourseListSection = () => {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const getLevelFromLessons = (lessons: Course["lessons"]) => {
-    if (!lessons || lessons.length === 0) return "Beginner";
-    const levels = lessons.map((l) => l.level?.toLowerCase() || "");
-    if (levels.includes("advanced")) return "Advanced";
-    if (levels.includes("intermediate")) return "Intermediate";
-    return "Beginner";
-  };
-
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case "Beginner":
-        return "text-green-500 bg-green-50";
-      case "Intermediate":
-        return "text-blue-500 bg-blue-50";
-      case "Advanced":
-        return "text-purple-500 bg-purple-50";
-      default:
-        return "text-green-500 bg-green-50";
-    }
-  };
-
-  // Fixed getImageUrl with fallback for missing or relative paths
-  const getImageUrl = (imageUrl: string | undefined) => {
-    if (!imageUrl || imageUrl === "" || imageUrl === "undefined") {
-      return "/placeholder.png";
-    }
-    if (imageUrl.startsWith("http")) return imageUrl;
-    return `${process.env.NEXT_PUBLIC_BACKEND_URL}${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
-  };
-
-  const formatPrice = (price: number, currency: string) => {
-    return `${currency || "CAD"} ${price.toLocaleString()}`;
   };
 
   const renderPaginationItems = () => {
@@ -375,8 +310,9 @@ const CourseListSection = () => {
                     <CourseCardSkeleton key={i} />
                   ))
                 : paginatedCourses.map((course) => {
-                    const level = getLevelFromLessons(course.lessons);
-                    const levelColor = getLevelColor(level);
+                    const level = getCourseLevel(course.lessons);
+                    const levelColor = getCourseLevelColor(level);
+                    const lessonCount = getCourseLessonCount(course);
                     return (
                       <div
                         key={course._id}
@@ -384,7 +320,7 @@ const CourseListSection = () => {
                       >
                         <div className="relative aspect-[16/10] w-full overflow-hidden">
                           <Image
-                            src={getImageUrl(course?.image?.url)}
+                            src={getCourseImageUrl(course?.image?.url)}
                             alt={course.title}
                             fill
                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -394,7 +330,7 @@ const CourseListSection = () => {
                             {course.category || "Course"}
                           </Badge>
                           <div className="absolute top-4 right-4 px-3 py-1 rounded-md text-xs font-bold bg-[#004242] text-white">
-                            {formatPrice(course.price, course.currency)}
+                            {formatCoursePrice(course.price, course.currency)}
                           </div>
                         </div>
 
@@ -407,20 +343,22 @@ const CourseListSection = () => {
                             </span>
                             <div className="flex items-center gap-1.5 text-gray-400 text-[13px] font-medium">
                               <Clock size={15} className="text-[#004242]" />
-                              {course.totalDuration}
+                              {getCourseDuration(course)}
                             </div>
                           </div>
                           <h3 className="text-xl font-extrabold text-[#004242] mb-3 line-clamp-2">
                             {course.title}
                           </h3>
                           <p className="text-gray-500 text-[14px] line-clamp-2 mb-4">
-                            {course.lessonCount} lessons •{" "}
-                            {course.totalEnrolled} enrolled
+                            {lessonCount} lessons •{" "}
+                            {course.totalEnrolled || 0} enrolled
                           </p>
                           <div className="mt-auto">
                             <Link href={`/courses/${course._id}`}>
                               <Button className="w-full bg-[#004242] hover:bg-[#003333] text-white py-6 rounded-lg">
-                                Enroll Now
+                                {course.price && course.price > 0
+                                  ? "Enroll Now"
+                                  : "Start Free"}
                               </Button>
                             </Link>
                           </div>

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -36,6 +36,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 // Validation Schema
 const formSchema = z.object({
@@ -61,6 +62,7 @@ const SuggestCourseModal = ({ open, onOpenChange }: ModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const session = useSession();
   const token = session?.data?.user?.accessToken;
+  const router = useRouter();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -78,6 +80,13 @@ const SuggestCourseModal = ({ open, onOpenChange }: ModalProps) => {
   });
 
   const onSubmit = async (values: FormValues) => {
+    if (!token) {
+      toast.error("Please login to submit a course idea.");
+      onOpenChange(false);
+      router.push("/login");
+      return;
+    }
+
     try {
       setIsLoading(true);
 

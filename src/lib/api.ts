@@ -1,7 +1,8 @@
 import axios from "axios";
 import { getSession, signOut } from "next-auth/react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -12,8 +13,9 @@ export const api = axios.create({
 api.interceptors.request.use(
   async (config) => {
     const session = await getSession();
-    if (session?.accessToken) {
-      config.headers.Authorization = `Bearer ${session.accessToken}`;
+    const accessToken = session?.user?.accessToken;
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
     return config;
   },
@@ -41,8 +43,9 @@ api.interceptors.response.use(
       }
 
       // If we have a new access token, retry the request
-      if (session?.accessToken) {
-        originalRequest.headers.Authorization = `Bearer ${session.accessToken}`;
+      const accessToken = session?.user?.accessToken;
+      if (accessToken) {
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return api(originalRequest);
       }
     }

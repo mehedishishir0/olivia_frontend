@@ -10,40 +10,16 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
-
-interface Lesson {
-  title: string;
-  duration: string;
-  level: string;
-  videoUrl: string;
-  _id: string;
-}
-
-interface Course {
-  _id: string;
-  title: string;
-  category: string;
-  lessonCount: number;
-  totalDuration: string;
-  price: number;
-  currency: string;
-  isAvailable: boolean;
-  totalEnrolled: number;
-  image: {
-    url: string;
-    public_id: string;
-  };
-  lessons: Lesson[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface ApiResponse {
-  success: boolean;
-  message: string;
-  statusCode: number;
-  data: Course;
-}
+import { api } from "@/lib/api";
+import {
+  CourseApiResponse,
+  formatCoursePrice,
+  getCourseDuration,
+  getCourseImageUrl,
+  getCourseLessonCount,
+  getCourseLevel,
+  getVideoEmbedUrl,
+} from "@/lib/course-utils";
 
 interface EnrollmentResponse {
   success: boolean;
@@ -59,20 +35,8 @@ interface EnrollmentResponse {
       createdAt: string;
       updatedAt: string;
     };
-    checkoutUrl: string;
+    checkoutUrl: string | null;
   };
-}
-
-interface ErrorResponse {
-  success: boolean;
-  statusCode: number;
-  message: string;
-  errorSource?: Array<{
-    path: string;
-    message: string;
-  }>;
-  error?: any;
-  stack?: string;
 }
 
 const FeaturedCourseSection = () => {
@@ -80,19 +44,13 @@ const FeaturedCourseSection = () => {
   const router = useRouter();
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
-  const [isEnrolling, setIsEnrolling] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
 
-  const { data, isLoading, error } = useQuery<ApiResponse>({
-    queryKey: ["course-details", id],
+  const { data, isLoading, error } = useQuery<CourseApiResponse>({
+    queryKey: ["course-details", id, token],
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/course/${id}`,
-      );
-      if (!res.ok) {
-        throw new Error("Failed to fetch course details");
-      }
-      return res.json();
+      const res = await api.get(`/course/${id}`);
+      return res.data;
     },
     enabled: !!id,
   });
@@ -103,27 +61,8 @@ const FeaturedCourseSection = () => {
         throw new Error("Please login to enroll in this course");
       }
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/enrollment/create`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            courseId: id,
-          }),
-        },
-      );
-
-      const responseData = await res.json();
-
-      if (!res.ok) {
-        throw responseData;
-      }
-
-      return responseData;
+      const res = await api.post("/enrollment/create", { courseId: id });
+      return res.data;
     },
     onSuccess: (data) => {
       if (data.success && data.data?.checkoutUrl) {
@@ -131,7 +70,7 @@ const FeaturedCourseSection = () => {
       } else if (data.success && !data.data?.checkoutUrl) {
         toast.success("Successfully enrolled in course!");
         setTimeout(() => {
-          router.push(`/courses/${id}/watch`);
+          router.push(`/courses/${id}/enroll-course`);
         }, 2000);
       }
     },
@@ -167,34 +106,6 @@ const FeaturedCourseSection = () => {
   };
 
   const course = data?.data;
-
-  const getSkillLevel = (lessons: Lesson[]) => {
-    if (!lessons || lessons.length === 0) return "Beginner";
-    const levels = lessons.map((l) => l.level.toLowerCase());
-    if (levels.includes("advanced")) return "Advanced";
-    if (levels.includes("intermediate")) return "Intermediate";
-    return "Beginner";
-  };
-
-  const getTotalDurationInHours = (totalDuration: string) => {
-    if (totalDuration?.includes("min")) {
-      const minutes = parseInt(totalDuration);
-      if (minutes >= 60) {
-        const hours = Math.floor(minutes / 60);
-        const remainingMinutes = minutes % 60;
-        return remainingMinutes > 0
-          ? `${hours}h ${remainingMinutes}min`
-          : `${hours}h`;
-      }
-      return totalDuration;
-    }
-    return totalDuration;
-  };
-
-  const getImageUrl = (imageUrl: string) => {
-    if (imageUrl.startsWith("http")) return imageUrl;
-    return `${process.env.NEXT_PUBLIC_BACKEND_URL}${imageUrl}`;
-  };
 
   if (error) {
     return (
@@ -266,11 +177,16 @@ const FeaturedCourseSection = () => {
     );
   }
 
-  const skillLevel = getSkillLevel(course.lessons);
-  const formattedDuration = getTotalDurationInHours(course.totalDuration);
-  const firstLesson = course?.lessons[0];
+  const lessons = course.lessons || [];
+  const skillLevel = getCourseLevel(lessons);
+  const formattedDuration = getCourseDuration(course);
+  const lessonCount = getCourseLessonCount(course);
+  const firstLesson = lessons[0];
   const videoUrl = firstLesson?.videoUrl;
-  const isEnrollingLoading = enrollmentMutation.isPending || isEnrolling;
+  const previewUrl = getVideoEmbedUrl(videoUrl);
+  const isEnrollingLoading = enrollmentMutation.isPending;
+  const isFree = !course.price || course.price <= 0;
+  const canWatch = course.isEnrolled || !course.isLocked;
 
   return (
     <section className="bg-[#EDF2F2]">
@@ -285,10 +201,12 @@ const FeaturedCourseSection = () => {
 
               <p className="text-gray-500 text-sm md:text-base leading-relaxed max-w-lg">
                 Master the fundamentals of {course.title.toLowerCase()}. This
-                course includes {course.lessonCount} lessons with a total
+                course includes {lessonCount} lessons with a total
                 duration of {formattedDuration}. Perfect for{" "}
-                {skillLevel.toLowerCase()} level learners looking to enhance
-                their skills in {course?.category?.toLowerCase()}.
+                {skillLevel.toLowerCase()} level learners
+                {course.category
+                  ? ` looking to enhance their skills in ${course.category.toLowerCase()}.`
+                  : "."}
               </p>
 
               {/* Stats Grid */}
@@ -309,7 +227,7 @@ const FeaturedCourseSection = () => {
                   </p>
                   <div className="flex items-center gap-1.5 text-gray-400 text-xs">
                     <BookOpen size={14} className="text-[#004242]" />
-                    {course.lessonCount} Units
+                    {lessonCount} Units
                   </div>
                 </div>
                 <div className="space-y-1 pl-4">
@@ -324,10 +242,10 @@ const FeaturedCourseSection = () => {
               </div>
 
               {/* Price if available */}
-              {course.price > 0 && (
+              {!isFree && (
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl font-bold text-[#004242]">
-                    {course.currency} {course.price}
+                    {formatCoursePrice(course.price, course.currency)}
                   </span>
                   <span className="text-gray-500 text-sm">
                     one-time payment
@@ -337,7 +255,11 @@ const FeaturedCourseSection = () => {
             </div>
 
             <Button
-              onClick={handleEnroll}
+              onClick={() =>
+                canWatch
+                  ? router.push(`/courses/${id}/enroll-course`)
+                  : handleEnroll()
+              }
               disabled={isEnrollingLoading}
               className="w-full bg-[#004242] hover:bg-[#003333] text-white py-7 rounded-lg text-lg mt-8 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -347,7 +269,11 @@ const FeaturedCourseSection = () => {
                   <span>Processing...</span>
                 </div>
               ) : (
-                `Enroll in Course - ${course.currency} ${course.price}`
+                canWatch
+                  ? "Continue Learning"
+                  : isFree
+                    ? "Start Free Course"
+                    : `Enroll in Course - ${formatCoursePrice(course.price, course.currency)}`
               )}
             </Button>
           </div>
@@ -355,9 +281,9 @@ const FeaturedCourseSection = () => {
           {/* Right Video/Image Preview */}
           <div className="relative group bg-white p-3 rounded-2xl shadow-sm border border-white">
             <div className="relative h-full min-h-[400px] w-full overflow-hidden rounded-xl">
-              {showVideo && videoUrl ? (
+              {showVideo && previewUrl ? (
                 <iframe
-                  src={videoUrl}
+                  src={previewUrl}
                   className="absolute inset-0 w-full h-full"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -366,11 +292,23 @@ const FeaturedCourseSection = () => {
               ) : (
                 <>
                   <Image
-                    src={getImageUrl(course.image.url)}
+                    src={getCourseImageUrl(course.image?.url)}
                     alt={course.title}
                     fill
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                   />
+                  {previewUrl && videoUrl !== "LOCKED" && (
+                    <button
+                      type="button"
+                      onClick={() => setShowVideo(true)}
+                      className="absolute inset-0 flex items-center justify-center bg-black/20 text-white transition-colors hover:bg-black/30"
+                      aria-label="Play course preview"
+                    >
+                      <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/95 text-[#004242] shadow-lg">
+                        <Play size={30} fill="currentColor" />
+                      </span>
+                    </button>
+                  )}
                 </>
               )}
             </div>

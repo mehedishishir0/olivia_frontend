@@ -8,44 +8,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
-
-interface Course {
-  _id: string;
-  title: string;
-  category: string;
-  lessonCount: number;
-  totalDuration: string;
-  price: number;
-  currency: string;
-  isAvailable: boolean;
-  totalEnrolled: number;
-  image: {
-    url: string;
-    public_id: string;
-  };
-  lessons: Array<{
-    title: string;
-    duration: string;
-    level: string;
-    videoUrl: string;
-    _id: string;
-  }>;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface ApiResponse {
-  success: boolean;
-  message: string;
-  statusCode: number;
-  data: Course[];
-  meta: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPage: number;
-  };
-}
+import {
+  CoursesApiResponse,
+  formatCoursePrice,
+  getCourseDuration,
+  getCourseImageUrl,
+  getCourseLessonCount,
+  getCourseLevel,
+  getCourseLevelColor,
+} from "@/lib/course-utils";
 
 const CourseCardSkeleton = () => (
   <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm flex flex-col h-full">
@@ -71,7 +42,7 @@ const ExploreOtherCourses = () => {
   const currentCourseId = id as string;
 
   // Fetch other courses (excluding current course)
-  const { data, isLoading, error } = useQuery<ApiResponse>({
+  const { data, isLoading, error } = useQuery<CoursesApiResponse>({
     queryKey: ["other-courses", currentCourseId],
     queryFn: async () => {
       // Fetch more courses than needed to ensure we have enough after filtering
@@ -87,36 +58,6 @@ const ExploreOtherCourses = () => {
     data?.data
       ?.filter((course) => course._id !== currentCourseId)
       ?.slice(0, 3) || [];
-
-  const getLevelFromLessons = (lessons: Course["lessons"]) => {
-    if (!lessons || lessons.length === 0) return "Beginner";
-    const levels = lessons.map((l) => l.level.toLowerCase());
-    if (levels.includes("advanced")) return "Advanced";
-    if (levels.includes("intermediate")) return "Intermediate";
-    return "Beginner";
-  };
-
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case "Beginner":
-        return "text-green-500 bg-green-50";
-      case "Intermediate":
-        return "text-blue-500 bg-blue-50";
-      case "Advanced":
-        return "text-purple-500 bg-purple-50";
-      default:
-        return "text-green-500 bg-green-50";
-    }
-  };
-
-  const getImageUrl = (imageUrl: string) => {
-    if (imageUrl.startsWith("http")) return imageUrl;
-    return `${process.env.NEXT_PUBLIC_BACKEND_URL}${imageUrl}`;
-  };
-
-  const formatPrice = (price: number, currency: string) => {
-    return `${currency} ${price.toLocaleString()}`;
-  };
 
   if (error) {
     return (
@@ -178,10 +119,14 @@ const ExploreOtherCourses = () => {
         {/* Courses Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {otherCourses.map((course) => {
-            const level = getLevelFromLessons(course.lessons);
-            const levelColor = getLevelColor(level);
-            const formattedPrice = formatPrice(course.price, course.currency);
-            const isFree = course.price === 0;
+            const level = getCourseLevel(course.lessons);
+            const levelColor = getCourseLevelColor(level);
+            const formattedPrice = formatCoursePrice(
+              course.price,
+              course.currency,
+            );
+            const lessonCount = getCourseLessonCount(course);
+            const isFree = !course.price || course.price <= 0;
 
             return (
               <div
@@ -190,7 +135,7 @@ const ExploreOtherCourses = () => {
               >
                 <div className="relative aspect-[16/10] w-full overflow-hidden">
                   <Image
-                    src={getImageUrl(course.image.url)}
+                    src={getCourseImageUrl(course.image?.url)}
                     alt={course.title}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -215,7 +160,7 @@ const ExploreOtherCourses = () => {
                     </span>
                     <div className="flex items-center gap-1.5 text-gray-400 text-[13px] font-medium">
                       <Clock size={15} className="text-[#004242]" />
-                      {course.totalDuration}
+                      {getCourseDuration(course)}
                     </div>
                   </div>
 
@@ -224,7 +169,7 @@ const ExploreOtherCourses = () => {
                   </h3>
 
                   <p className="text-gray-500 text-[14px] leading-relaxed line-clamp-2 mb-4">
-                    {course.lessonCount} lessons • {course.totalEnrolled}{" "}
+                    {lessonCount} lessons • {course.totalEnrolled || 0}{" "}
                     enrolled
                   </p>
 
@@ -243,7 +188,7 @@ const ExploreOtherCourses = () => {
 
                     <Link href={`/courses/${course._id}`}>
                       <Button className="w-full bg-[#004242] hover:bg-[#003333] text-white py-6 rounded-lg text-sm transition-colors">
-                        Enroll Now
+                        {isFree ? "Start Free" : "Enroll Now"}
                       </Button>
                     </Link>
                   </div>
