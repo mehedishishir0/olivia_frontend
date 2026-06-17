@@ -4,6 +4,7 @@ import OurMission from "./_components/our-mission";
 import MeetOurTeam from "./_components/meet-our-team";
 import { Newsletter } from "@/components/home/Newsletter";
 import CommunitySection from "@/components/home/CommunitySection";
+import Ourstory from "./_components/Our-story";
 
 const page = () => {
   return (
@@ -15,6 +16,7 @@ const page = () => {
         isHide={true}
       />
       <OurMission />
+      <Ourstory />
       <MeetOurTeam />
       <div>
         <Newsletter />
