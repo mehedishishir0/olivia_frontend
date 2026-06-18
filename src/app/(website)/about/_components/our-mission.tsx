@@ -24,7 +24,7 @@ const OurMission = () => {
           <div className="w-full lg:w-1/2 space-y-8">
             <div>
               <h2 className="text-4xl md:text-5xl text-[#064E4B] mb-6">
-                Our Mission
+                Our Mission                                                      
               </h2>
               <p className="text-[#528B8A] text-lg leading-relaxed max-w-xl">
                 Act on Climate is a website-based platform for those who are
