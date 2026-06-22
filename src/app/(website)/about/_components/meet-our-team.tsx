@@ -135,7 +135,7 @@ const MeetOurTeam = () => {
   }
 
   return (
-    <section className="bg-[#EDF5F4] ">
+    <section className="bg-[#EDF5F4] py-10 ">
       <div className="container">
         {/* Header */}
         <div className="text-center mb-16">
@@ -143,10 +143,10 @@ const MeetOurTeam = () => {
             Meet Our Team
           </h2>
 
-          <p className="text-[#528B8A] text-lg max-w-2xl mx-auto">
+          {/* <p className="text-[#528B8A] text-lg max-w-2xl mx-auto">
             Down below will have headshot and position of everyone on the Act on
             Climate team.
-          </p>
+          </p> */}
         </div>
 
         {/* Team Grid */}
