@@ -14,7 +14,11 @@ export const Navbar = () => {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMembershipDropdownOpen, setIsMembershipDropdownOpen] =
+    useState(false);
   const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false);
+  const [isMobileMembershipDropdownOpen, setIsMobileMembershipDropdownOpen] =
+    useState(false);
 
   const isLoggedIn = !!session;
 
@@ -30,12 +34,15 @@ export const Navbar = () => {
   // ড্রপডাউন বা সাব-লিংকসমূহ
   const servicesLinks = [
     { name: "Support Our Work", href: "/support-our-work" },
-    { name: "Membership Pricing", href: "/membership-pricing" },
-    { name: "Become a Member", href: "/membership" },
     { name: "Blogs", href: "/blog" },
     { name: "Mentors & Coaches", href: "/mentor-coaches/all" },
     { name: "Career Services", href: "/career-services" },
     { name: "Find Your Opportunity", href: "/find-your-opportunity" },
+  ];
+
+  const membershipLinks = [
+    { name: "Membership Pricing", href: "/membership-pricing" },
+    { name: "Become a Member", href: "/membership" },
   ];
 
   const handleLogout = async () => {
@@ -52,11 +59,13 @@ export const Navbar = () => {
     if (href === "/") {
       return pathname === href;
     }
-    return pathname.startsWith(href);
+    return pathname === href || pathname.startsWith(`${href}/`);
   };
 
-  // সাব-লিংকগুলোর কোনো একটি অ্যাক্টিভ আছে কিনা চেক করার জন্য
   const isServicesActive = servicesLinks.some((link) => isActive(link.href));
+  const isMembershipActive = membershipLinks.some((link) =>
+    isActive(link.href),
+  );
 
   return (
     <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-sm">
@@ -105,6 +114,45 @@ export const Navbar = () => {
             {isDropdownOpen && (
               <div className="absolute left-0 mt-0 w-56 bg-white border border-gray-100 rounded-md shadow-lg py-2 z-50 animate-in fade-in slide-in-from-top-5 duration-200">
                 {servicesLinks.map((link) => (
+                  <Link
+                    key={link.name}
+                    href={link.href}
+                    className={`block px-4 py-2 text-sm transition-colors ${
+                      isActive(link.href)
+                        ? "bg-gray-50 text-[#0D3B3F] font-semibold"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-[#0D3B3F]"
+                    }`}
+                  >
+                    {link.name}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Desktop Membership Dropdown */}
+          <div
+            className="relative"
+            onMouseEnter={() => setIsMembershipDropdownOpen(true)}
+            onMouseLeave={() => setIsMembershipDropdownOpen(false)}
+          >
+            <button
+              className={`flex items-center gap-1 text-sm font-medium transition-colors ${
+                isMembershipActive
+                  ? "text-[#0D3B3F] font-semibold"
+                  : "text-gray-600 hover:text-[#0D3B3F]"
+              }`}
+            >
+              Membership Pricing
+              <ChevronDown
+                size={16}
+                className={`transition-transform duration-200 ${isMembershipDropdownOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {isMembershipDropdownOpen && (
+              <div className="absolute left-0 mt-0 w-56 bg-white border border-gray-100 rounded-md shadow-lg py-2 z-50 animate-in fade-in slide-in-from-top-5 duration-200">
+                {membershipLinks.map((link) => (
                   <Link
                     key={link.name}
                     href={link.href}
@@ -205,6 +253,47 @@ export const Navbar = () => {
               {isMobileDropdownOpen && (
                 <div className="pl-4 mt-1 space-y-1 bg-gray-50 rounded-md py-1">
                   {servicesLinks.map((link) => (
+                    <Link
+                      key={link.name}
+                      href={link.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`block text-sm font-medium transition-colors py-2 px-2 ${
+                        isActive(link.href)
+                          ? "text-[#0D3B3F] font-semibold"
+                          : "text-gray-500 hover:text-[#0D3B3F]"
+                      }`}
+                    >
+                      {link.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Membership Accordion Dropdown */}
+            <div className="border-b border-gray-50 pb-2">
+              <button
+                onClick={() =>
+                  setIsMobileMembershipDropdownOpen(
+                    !isMobileMembershipDropdownOpen,
+                  )
+                }
+                className={`flex items-center justify-between w-full text-sm font-medium py-2 transition-colors ${
+                  isMembershipActive
+                    ? "text-[#0D3B3F] font-semibold"
+                    : "text-gray-600"
+                }`}
+              >
+                <span>Membership Pricing</span>
+                <ChevronDown
+                  size={16}
+                  className={`transition-transform duration-200 ${isMobileMembershipDropdownOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {isMobileMembershipDropdownOpen && (
+                <div className="pl-4 mt-1 space-y-1 bg-gray-50 rounded-md py-1">
+                  {membershipLinks.map((link) => (
                     <Link
                       key={link.name}
                       href={link.href}

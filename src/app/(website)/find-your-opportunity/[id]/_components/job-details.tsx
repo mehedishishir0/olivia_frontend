@@ -12,26 +12,28 @@ import {
   Building2,
   ExternalLink,
   Clock,
-  Loader2,
+  DollarSign,
+  Users,
+  CheckCircle2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+// import {
+//   Dialog,
+//   DialogContent,
+//   DialogHeader,
+//   DialogTitle,
+//   DialogTrigger,
+// } from "@/components/ui/dialog";
+
 import { toast } from "sonner"; // ba tumi nizer moto notification use koro
 import { useSession } from "next-auth/react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 interface JobData {
   _id: string;
+  userId: string;
   title: string;
   category: string;
   jobType: string;
@@ -40,18 +42,44 @@ interface JobData {
   responsibility: string;
   requirement: string;
   skill: string;
+  applyUrl: string;
   companyName: string;
   companyURL: string;
-  companyLogo?: { url: string };
-  media: {
-    images: { url: string }[];
+  companyLogo?: {
+    url: string;
+    public_id?: string;
   };
+  status: string;
+  media: {
+    images: {
+      url: string;
+      public_id?: string;
+      _id?: string;
+    }[];
+    videos: {
+      url: string;
+      public_id?: string;
+      _id?: string;
+    }[];
+  };
+  deathLine: string;
   postedDate: string;
+  hiredCount: number;
+  totalHiredCount: number;
+  salary?: {
+    min: number;
+    max: number;
+    currency: string;
+    period: string;
+  };
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const JobDetails = () => {
   const { id } = useParams();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // const [isModalOpen, setIsModalOpen] = useState(false);
   const session = useSession();
   const token = session?.data?.user?.accessToken;
 
@@ -88,23 +116,23 @@ const JobDetails = () => {
     },
     onSuccess: () => {
       toast.success("Applied successfully!");
-      setIsModalOpen(false);
+      // setIsModalOpen(false);
     },
     onError: (err: any) => {
       toast.error(err.message);
     },
   });
 
-  const handleApplySubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const formData = new FormData(form);
+  // const handleApplySubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   const form = e.currentTarget;
+  //   const formData = new FormData(form);
 
-    // Postman-e 'jobId' field-ti proyojon chilo
-    formData.append("jobId", id as string);
+  //   // Postman-e 'jobId' field-ti proyojon chilo
+  //   formData.append("jobId", id as string);
 
-    submitApplication(formData);
-  };
+  //   submitApplication(formData);
+  // };
 
   if (isLoading) return <JobDetailsSkeleton />;
   if (error || !data)
@@ -119,6 +147,31 @@ const JobDetails = () => {
   const heroImage =
     job.media?.images?.[0]?.url ||
     "https://images.unsplash.com/photo-1501854140801-50d01698950b?q=80&w=2000&auto=format&fit=crop";
+
+  const formatDate = (date?: string) => {
+    if (!date) return "N/A";
+
+    return new Date(date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const formatSalary = (salary?: JobData["salary"]) => {
+    if (!salary) return "Salary not specified";
+
+    const formatter = new Intl.NumberFormat("en-US");
+    return `${salary.currency} ${formatter.format(salary.min)} - ${formatter.format(salary.max)} / ${salary.period}`;
+  };
+
+  const formatHiringCount = () => {
+    if (job.totalHiredCount) {
+      return `${job.hiredCount || 0} of ${job.totalHiredCount} candidates`;
+    }
+
+    return `${job.hiredCount || 0} candidates`;
+  };
 
   return (
     <div className="min-h-screen pb-20 mt-20">
@@ -138,7 +191,10 @@ const JobDetails = () => {
               {job.category}
             </Badge>
             <Badge className="bg-white text-slate-800 border-none px-4 py-1.5 rounded-lg shadow-md text-[10px] tracking-wider">
-              POSTED {new Date(job.postedDate).toLocaleDateString()}
+              POSTED {formatDate(job.postedDate)}
+            </Badge>
+            <Badge className="bg-white text-slate-800 border-none px-4 py-1.5 rounded-lg shadow-md text-[10px] tracking-wider">
+              DEADLINE {formatDate(job.deathLine)}
             </Badge>
           </div>
         </div>
@@ -152,6 +208,14 @@ const JobDetails = () => {
           <h1 className="text-4xl md:text-5xl font-black text-[#004D4D] tracking-tight">
             {job.title}
           </h1>
+          <div className="flex flex-wrap gap-3 mt-5">
+            <Badge className="bg-slate-50 text-slate-700 border border-slate-100 px-4 py-1.5 rounded-lg capitalize">
+              {job.status}
+            </Badge>
+            <Badge className="bg-slate-50 text-slate-700 border border-slate-100 px-4 py-1.5 rounded-lg">
+              {formatSalary(job.salary)}
+            </Badge>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -259,19 +323,49 @@ const JobDetails = () => {
                   value={job?.jobType}
                 />
                 <SummaryItem
+                  icon={<CheckCircle2 />}
+                  label="Status"
+                  value={job?.status || "N/A"}
+                />
+                <SummaryItem
                   icon={<Clock />}
                   label="Category"
                   value={job?.category}
                 />
                 <SummaryItem
+                  icon={<DollarSign />}
+                  label="Salary"
+                  value={formatSalary(job?.salary)}
+                />
+                <SummaryItem
+                  icon={<Calendar />}
+                  label="Deadline"
+                  value={formatDate(job?.deathLine)}
+                />
+                <SummaryItem
                   icon={<Calendar />}
                   label="Date Posted"
-                  value={new Date(job?.postedDate).toLocaleDateString()}
+                  value={formatDate(job?.postedDate)}
+                />
+                <SummaryItem
+                  icon={<Users />}
+                  label="Hiring"
+                  value={formatHiringCount()}
+                />
+                <SummaryItem
+                  icon={<Clock />}
+                  label="Last Updated"
+                  value={formatDate(job?.updatedAt)}
                 />
               </div>
 
               {/* Apply Modal Integration */}
-              <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+              <Link href={job?.applyUrl} target="_blank" rel="noopener noreferrer">
+                <Button className="w-full bg-[#004D4D] hover:bg-[#003D3D] text-white py-6 rounded-xl mt-8 shadow-md  transition-all active:scale-95">
+                  Apply Now
+                </Button> 
+              </Link>
+              {/* <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogTrigger asChild>
                   <Button className="w-full bg-[#004D4D] hover:bg-[#003D3D] text-white py-6 rounded-xl mt-8 shadow-md  transition-all active:scale-95">
                     Apply Now
@@ -346,7 +440,7 @@ const JobDetails = () => {
                     </Button>
                   </form>
                 </DialogContent>
-              </Dialog>
+              </Dialog> */}
             </div>
           </div>
         </div>

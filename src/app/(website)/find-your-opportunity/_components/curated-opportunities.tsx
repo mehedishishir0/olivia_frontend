@@ -9,7 +9,7 @@ import React, {
 import Image from "next/image";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Clock, ChevronRight } from "lucide-react";
+import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -26,16 +26,47 @@ import {
 // Standard Interfaces
 interface Job {
   _id: string;
+  userId: string;
   title: string;
   category: string;
   jobType: string;
   location: string;
-  companyName: string;
   description: string;
-  media: {
-    images: { url: string }[];
+  responsibility: string;
+  requirement: string;
+  skill: string;
+  companyName: string;
+  companyURL: string;
+  companyLogo?: {
+    url: string;
+    public_id?: string;
   };
+  status: string;
+  media: {
+    images: {
+      url: string;
+      public_id?: string;
+      _id?: string;
+    }[];
+    videos: {
+      url: string;
+      public_id?: string;
+      _id?: string;
+    }[];
+  };
+  deathLine: string;
   postedDate: string;
+  hiredCount: number;
+  totalHiredCount: number;
+  salary?: {
+    min: number;
+    max: number;
+    currency: string;
+    period: string;
+  };
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface JobApiResponse {
@@ -72,7 +103,14 @@ const CuratedOpportunities = () => {
   const [, startTransition] = useTransition();
 
   // ✅ Static Categories (ONLY CHANGE)
-  const dynamicCategories = ["All", "Jobs", "Fellowships", "Resources"];
+  const dynamicCategories = [
+    "All",
+    "Fellowships",
+    "Events",
+    "Resources",
+    "Courses",
+    "Grants & Fundraising",
+  ];
 
   // Main Query for Paginated & Filtered Data
   const { data, isLoading } = useQuery<JobApiResponse>({
@@ -110,6 +148,23 @@ const CuratedOpportunities = () => {
     if (category.toLowerCase().includes("design"))
       return "bg-purple-50 text-purple-600";
     return "bg-emerald-50 text-emerald-600";
+  };
+
+  const formatDate = (date?: string) => {
+    if (!date) return "N/A";
+
+    return new Date(date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const formatSalary = (salary?: Job["salary"]) => {
+    if (!salary) return "Salary not specified";
+
+    const formatter = new Intl.NumberFormat("en-US");
+    return `${salary.currency} ${formatter.format(salary.min)} - ${formatter.format(salary.max)} / ${salary.period}`;
   };
 
   return (
@@ -190,20 +245,53 @@ const CuratedOpportunities = () => {
                     >
                       {job.jobType || "Full-time"}
                     </Badge>
-                    <div className="flex items-center gap-1 text-[11px] text-slate-400 ">
-                      <Clock className="w-3.5 h-3.5 text-[#004D4D]" />4 WEEKS
-                    </div>
+                    <Badge
+                      variant="secondary"
+                      className={`border-none px-3 py-1 text-[11px] font-medium rounded-full
+    ${
+      job.status?.toLowerCase() === "open"
+        ? "bg-emerald-100 text-emerald-700"
+        : job.status?.toLowerCase() === "closed"
+          ? "bg-red-100 text-red-700"
+          : job.status?.toLowerCase() === "filled"
+            ? "bg-blue-100 text-blue-700"
+            : "bg-slate-100 text-slate-700"
+    }`}
+                    >
+                      {job.status}
+                    </Badge>
                   </div>
 
                   <h3 className="text-xl  text-[#004D4D] mb-3 line-clamp-1">
                     {job.title}
                   </h3>
 
-                  <p className="text-slate-500 text-[13px] leading-relaxed line-clamp-3 mb-6 flex-grow">
-                    {job.description ||
-                      "Building future-proof solutions for the climate ecosystem through modern technology."}
-                  </p>
+                  <div className="space-y-1 mb-4 text-[12px] text-slate-500">
+                    <p className="line-clamp-1">
+                      {job.companyName} • {job.location}
+                    </p>
+                    <p className="line-clamp-1">{formatSalary(job.salary)}</p>
+                    <p className="line-clamp-1">
+                      Deadline {formatDate(job.deathLine)} • Posted{" "}
+                      {formatDate(job.postedDate)}
+                    </p>
+                    <p className="line-clamp-1">
+                      Hiring {job.hiredCount || 0}
+                      {job.totalHiredCount
+                        ? ` of ${job.totalHiredCount}`
+                        : ""}{" "}
+                      candidates
+                    </p>
+                  </div>
 
+                  <p
+                    className="text-slate-500 text-[13px] leading-relaxed line-clamp-3 mb-6 flex-grow"
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        job.description ||
+                        "Building future-proof solutions for the climate ecosystem through modern technology.",
+                    }}
+                  />
                   <Link
                     href={`/find-your-opportunity/${job._id}`}
                     className="mt-auto"
