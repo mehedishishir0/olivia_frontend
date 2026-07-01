@@ -56,10 +56,16 @@ const ForgotPasswordForm = () => {
       }
       return data;
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
       toast.success(data?.message || "OTP sent successfully!");
-      const encodedEmail = encodeURIComponent(variables.email);
-      router.push(`/otp?email=${encodedEmail}`);
+      const accessToken = data?.data?.accessToken;
+
+      if (!accessToken) {
+        toast.error("Access token not found.");
+        return;
+      }
+
+      router.push(`/otp?token=${encodeURIComponent(accessToken)}`);
     },
     onError: (error: any) => {
       toast.error(error?.message);

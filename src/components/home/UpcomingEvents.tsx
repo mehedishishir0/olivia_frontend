@@ -29,7 +29,7 @@ const fetchEvents = async (): Promise<Event[]> => {
     throw new Error(data.message || "Failed to fetch events");
   }
 
-  return data.data;
+  return data.data;  
 };
 
 export const UpcomingEvents = () => {
@@ -105,6 +105,7 @@ export const UpcomingEvents = () => {
                       {day}
                     </p>
                   </div>
+                  
                 </div>
 
                 {/* Content */}

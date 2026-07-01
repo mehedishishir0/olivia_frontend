@@ -20,7 +20,7 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import {  useState } from "react";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 
@@ -33,15 +33,13 @@ type FormType = z.infer<typeof formSchema>;
 const OtpForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState<string | null>(null);
   const [isResending, setIsResending] = useState(false);
 
-  useEffect(() => {
-    const emailParam = searchParams.get("email");
-    if (emailParam) {
-      setEmail(decodeURIComponent(emailParam));
-    }
-  }, [searchParams]);
+  // Derive token from search params to avoid setting state inside an effect
+  const token = (() => {
+    const tokenParam = searchParams.get("token");
+    return tokenParam ? decodeURIComponent(tokenParam) : null;
+  })();
 
   const form = useForm<FormType>({
     resolver: zodResolver(formSchema),
@@ -53,13 +51,19 @@ const OtpForm = () => {
   const { mutateAsync, isPending } = useMutation({
     mutationKey: ["verify-otp"],
     mutationFn: async (payload: FormType) => {
-      const requestBody = email ? { ...payload, email } : payload;
+      if (!token) {
+        throw new Error("Access token not found.");
+      }
+
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/verify-reset-otp`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/verify-otp`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(requestBody),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
         },
       );
       const data = await res.json();
@@ -68,10 +72,12 @@ const OtpForm = () => {
     },
     onSuccess: (data) => {
       toast.success(data?.message || "OTP Verified!");
-      const targetUrl = email
-        ? `/reset-password?email=${encodeURIComponent(email)}`
-        : "/reset-password";
-      router.push(targetUrl);
+      const accessToken = data?.data?.accessToken;
+      router.push(
+        accessToken
+          ? `/reset-password?token=${encodeURIComponent(accessToken)}`
+          : "/reset-password",
+      );
     },
     onError: (error: any) => {
       toast.error(error?.message);
@@ -80,18 +86,20 @@ const OtpForm = () => {
   });
 
   const handleResendOTP = async () => {
-    if (!email) {
-      toast.error("Email not found.");
+    if (!token) {
+      toast.error("Access token not found.");
       return;
     }
     try {
       setIsResending(true);
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/forgot-password`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/resend-forgot-otp`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         },
       );
       if (!res.ok) throw new Error("Failed to resend OTP");

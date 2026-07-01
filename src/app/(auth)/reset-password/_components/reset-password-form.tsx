@@ -41,14 +41,14 @@ type FormType = z.infer<typeof formSchema>;
 const ResetPasswordForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [email, setEmail] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const emailParam = searchParams.get("email");
-    if (emailParam) {
-      setEmail(decodeURIComponent(emailParam));
+    const tokenParam = searchParams.get("token");
+    if (tokenParam) {
+      setToken(decodeURIComponent(tokenParam));
     }
   }, [searchParams]);
 
@@ -63,13 +63,19 @@ const ResetPasswordForm = () => {
   const { mutateAsync, isPending } = useMutation({
     mutationKey: ["reset-password"],
     mutationFn: async (payload: FormType) => {
-      const requestBody = email ? { ...payload, email } : payload;
+      if (!token) {
+        throw new Error("Access token not found.");
+      }
+
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/reset-password`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(requestBody),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ newPassword: payload.newPassword }),
         },
       );
 
